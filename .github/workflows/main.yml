@@ -25,7 +25,7 @@ jobs:
 
       - name: SonarCloud Scan
         env:
-          SONAR_TOKEN: 75afe332233ca14c6df9ff77c73fb843044378dd
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn -B sonar:sonar \
             -Dsonar.projectKey=olehio-p_InformationSecurity \
