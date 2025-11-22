@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.example.informationsecurity.controllers.DSAControllerTest
+-------------------------------------------------------------------------------
+Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.219 s -- in com.example.informationsecurity.controllers.DSAControllerTest

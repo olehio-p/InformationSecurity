@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSA Digital Signer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+            color: #f0f6fc;
+            font-family: 'JetBrains Mono', 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.06;
+            background-image:
+                    linear-gradient(rgba(139,148,158,0.3) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(139,148,158,0.3) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridMove 40s linear infinite;
+            z-index: 0;
+        }
+        @keyframes gridMove { 0% { transform: translate(0,0); } 100% { transform: translate(40px,40px); } }
+
+        .crypto-flow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+        .crypto-char {
+            position: absolute;
+            color: rgba(124,58,237,0.18);
+            font-size: 1.4rem;
+            animation: cryptoFall linear infinite;
+            user-select: none;
+        }
+        @keyframes cryptoFall {
+            0%   { transform: translateY(-120px); opacity: 0; }
+            10%  { opacity: 0.7; }
+            90%  { opacity: 0.7; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        .header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+            background: rgba(13,17,23,0.92); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(48,54,61,0.6); padding: 1rem 2rem;
+        }
+        .header-content {
+            display: flex; align-items: center; justify-content: space-between; max-width: 1500px; margin: 0 auto;
+        }
+        .logo {
+            display: flex; align-items: center; gap: 12px; font-size: 1.5rem; font-weight: 700; color: #f0f6fc; text-decoration: none;
+        }
+        .logo i { color: #7c3aed; text-shadow: 0 0 10px rgba(124,58,237,0.6); }
+
+        .nav-links a {
+            color: #8b949e; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; transition: all 0.3s ease;
+        }
+        .nav-links a:hover { color: #58a6ff; background: rgba(88,166,255,0.15); }
+        .nav-links a.active { color: #58a6ff; background: rgba(88,166,255,0.25); font-weight: 600; }
+
+        .main-container {
+            max-width: 1400px; margin: 6rem auto 3rem; padding: 1.5rem; position: relative; z-index: 10;
+        }
+
+        .hero-title {
+            font-size: clamp(2.4rem, 5.5vw, 3.2rem);
+            font-weight: 700;
+            text-align: center;
+            background: linear-gradient(135deg, #f0f6fc 0%, #79c0ff 45%, #7c3aed 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            animation: titleGlow 4s ease-in-out infinite alternate infinite;
+        }
+        @keyframes titleGlow {
+            0%   { filter: drop-shadow(0 0 8px rgba(124,58,237,0.4)); }
+            100% { filter: drop-shadow(0 0 16px rgba(124,58,237,0.7)); }
+        }
+
+        .hero-subtitle {
+            text-align: center; color: #8b949e; font-size: 1.1rem; margin-bottom: 2.5rem;
+        }
+
+        .card {
+            background: rgba(33,38,45,0.97);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(48,54,61,0.7);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: all 0.4s ease;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: #7c3aed;
+            box-shadow: 0 16px 50px rgba(124,58,237,0.35);
+        }
+
+        .card-header h5 {
+            color: #58a6ff;
+            font-weight: 600;
+            font-size: 1.3rem;
+        }
+
+        /* Section headings inside form */
+        .card h5:not(.card-header h5) {
+            color: #f0f6fc !important;
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .form-label { color: #f0f6fc; font-weight: 500; }
+        .form-control, textarea.form-control {
+            background: rgba(22,27,34,0.95);
+            border: 1px solid rgba(48,54,61,0.7);
+            color: #f0f6fc;
+            border-radius: 8px;
+        }
+        .form-control:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.3);
+        }
+        .form-text { color: #79c0ff !important; font-size: 0.85rem; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #9f67ff 100%);
+            border: none; padding: 1rem 2rem; border-radius: 12px;
+            font-weight: 700; font-size: 1.1rem; width: 100%;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(124,58,237,0.5);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #30363d 0%, #49515a 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 100%);
+            transform: translateY(-2px);
+        }
+
+        .custom-file-input {
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .custom-file-input input[type="file"] { display: none; }
+        .file-display {
+            background: rgba(22,27,34,0.95);
+            border: 1px solid rgba(48,54,61,0.7);
+            color: #f0f6fc;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            flex-grow: 1;
+            font-size: 0.95rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .result-hex {
+            background: #161b22;
+            padding: 1.5rem;
+            border-radius: 1px solid rgba(48,54,61,0.7);
+            border-radius: 12px;
+            word-break: break-all;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #f0f6fc;
+        }
+
+        hr { border-color: rgba(48,54,61,0.7); margin: 2.5rem 0; }
+
+        .alert-info, .alert-success, .alert-danger, .alert-warning {
+            border-radius: 12px; padding: 1.25rem;
+        }
+
+        .footer {
+            text-align: center;
+            color: #6e7681;
+            padding: 2rem;
+            font-size: 0.9rem;
+        }
+
+        /* Side-by-side + equal height */
+        .cards-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: stretch;
+        }
+        .cards-row > .card {
+            display: flex;
+            flex-direction: column;
+        }
+        .cards-row > .card > .card-body {
+            flex-grow: 1;
+        }
+
+        /* Fix: "No signature" message - top aligned & bright */
+        .no-signature-placeholder {
+            color: #f0f6fc;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .no-signature-placeholder h4 {
+            color: #f0f6fc;
+            margin-bottom: 0.5rem;
+        }
+        .no-signature-placeholder small {
+            color: #8b949e;
+        }
+
+        @media (max-width: 992px) {
+            .cards-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="crypto-flow" id="cryptoFlow"></div>
+
+<header class="header" role="banner">
+    <div class="header-content">
+        <a href="/lab5/dsa/keygen" class="logo" aria-label="DSA Home">
+            Signature <span>DSA Signature</span>
+        </a>
+        <nav aria-label="Main navigation">
+            <ul class="nav-links list-unstyled d-flex gap-3 mb-0">
+                <li><a href="/" class="btn-home">Home</a></li>
+                <li><a href="/lab5/dsa/keygen">Key Generation</a></li>
+                <li><a href="/lab5/dsa/sign" class="active">Sign Data</a></li>
+                <li><a href="/lab5/dsa/verify">Verify Signature</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="main-container" role="main">
+    <h1 class="hero-title">Create Signature</h1>
+    <p class="hero-subtitle">Sign data using your Private Key (DSA). You can sign a file or a string.</p>
+
+    <div class="cards-row">
+        <!-- Left: Form -->
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Data Signing Setup</h5></div>
+            <div class="card-body">
+                <form th:action="@{/lab5/dsa/sign-data}" method="post" enctype="multipart/form-data">
+
+                    <div class="mb-4">
+                        <label for="privateKeyFile" class="form-label">Select Private Key (.pem)</label>
+                        <div class="custom-file-input">
+                            <input type="file" id="privateKeyFile" name="privateKeyFile" required>
+                            <div class="file-display" id="privateKeyFileDisplay">No key file chosen</div>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('privateKeyFile').click()">Choose Key</button>
+                        </div>
+                    </div>
+
+                    <h5>Data to Sign (Choose One)</h5>
+
+                    <div class="mb-4">
+                        <label for="file" class="form-label">Option 1: Select File</label>
+                        <div class="custom-file-input">
+                            <input type="file" id="file" name="file">
+                            <div class="file-display" id="fileDisplay">No file chosen</div>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('file').click()">Choose File</button>
+                        </div>
+                        <div class="form-text">The Private Key will sign the SHA-256 hash of this file.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="inputText" class="form-label">Option 2: Input Text</label>
+                        <textarea class="form-control" id="inputText" name="inputText" rows="4" placeholder="Enter text to sign"></textarea>
+                    </div>
+
+                    <h5>Save Options (Optional)</h5>
+
+                    <div class="mb-4">
+                        <label for="saveName" class="form-label">Signature Output Name</label>
+                        <input type="text" class="form-control" id="saveName" name="saveName" placeholder="[OriginalName].sig">
+                        <div class="form-text">Defaults to [OriginalName].sig</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Choose Save Location (Folder)</label>
+                        <input type="file" id="customPath" webkitdirectory directory multiple style="display:none;">
+                        <button type="button" class="btn btn-secondary w-100" onclick="chooseFolder()">Select Folder</button>
+                        <small id="folderPath" class="form-text text-info mt-2">Default path: Downloads</small>
+                        <input type="hidden" id="saveDirectory" name="saveDirectory">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Create Digital Signature
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right: Result -->
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Signature Result</h5></div>
+            <div class="card-body">
+
+                <div th:if="${error}" class="alert alert-danger" role="alert">Failed <span th:text="${error}"></span></div>
+                <div th:if="${success}" class="alert alert-success" role="alert">Success <span th:text="${success}"></span></div>
+                <div th:if="${saveSuccess}" class="alert alert-info" role="alert">Saved <span th:text="${saveSuccess}"></span></div>
+
+                <div th:if="${signatureHex}">
+                    <div class="alert alert-warning text-center mb-4">
+                        <h4>Signed Data: <span th:text="${originalName}"></span></h4>
+                        <p class="mb-0" th:text="${dataType == 'File' ? 'SHA-256 Hash of File' : 'Data Type: String'}"></p>
+                        <strong th:if="${dataHash}" style="font-size: 0.85rem; display: block; margin-top: 0.5rem;" th:text="${dataHash}"></strong>
+                    </div>
+
+                    <h6 class="text-info">Generated Signature (Hexadecimal):</h6>
+                    <div class="result-hex mt-3" th:text="${signatureHex}"></div>
+
+                    <p class="text-muted mt-4">
+                        This signature is verifiable only by the <strong>Public Key</strong> corresponding to the Private Key used.
+                    </p>
+                </div>
+
+                <!-- Fixed: top-aligned & bright text -->
+                <div th:unless="${signatureHex}" class="no-signature-placeholder">
+                    <h4>No signature generated yet.</h4>
+                    <small>Select data and private key to sign.</small>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+    <p>Built with <i class="fas fa-heart" style="color: #f85149;"></i> by the Research Team</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const symbols = ['Lock','Unlock','Shield','Key','Diamond','Diamond','Club','A','B','C','D','E','F'];
+    function generateCryptoFlow() {
+        const container = document.getElementById('cryptoFlow');
+        for (let i = 0; i < 28; i++) {
+            const el = document.createElement('div');
+            el.className = 'crypto-char';
+            el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+            el.style.left = Math.random() * 100 + '%';
+            el.style.animationDuration = (Math.random() * 10 + 12) + 's';
+            el.style.animationDelay = Math.random() * 5 + 's';
+            container.appendChild(el);
+        }
+    }
+
+    function chooseFolder() {
+        const input = document.getElementById('customPath');
+        input.onchange = function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                const fullPath = files[0].webkitRelativePath;
+                const pathComponents = fullPath.split('/');
+                const folderPath = pathComponents.slice(0, -1).join('/') || pathComponents[0];
+                document.getElementById('folderPath').innerText = 'Selected path: ' + folderPath;
+                document.getElementById('saveDirectory').value = folderPath;
+            }
+        };
+        input.click();
+    }
+
+    function setupFileInput(inputId, displayId) {
+        const input = document.getElementById(inputId);
+        const display = document.getElementById(displayId);
+        input.addEventListener('change', () => {
+            display.textContent = input.files?.length > 0 ? input.files[0].name : 'No file chosen';
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        generateCryptoFlow();
+        setupFileInput('privateKeyFile', 'privateKeyFileDisplay');
+        setupFileInput('file', 'fileDisplay');
+    });
+</script>
+</body>
+</html>
