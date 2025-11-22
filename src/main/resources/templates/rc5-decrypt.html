@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC5-CBC-Pad Decryptor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+            color: #f0f6fc;
+            font-family: 'JetBrains Mono', 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.06;
+            background-image:
+                    linear-gradient(rgba(139,148,158,0.3) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(139,148,158,0.3) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridMove 40s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes gridMove { 0% { transform: translate(0,0); } 100% { transform: translate(40px,40px); } }
+
+        .crypto-flow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+        .crypto-char {
+            position: absolute;
+            color: rgba(124,58,237,0.18);
+            font-size: 1.4rem;
+            animation: cryptoFall linear infinite;
+            user-select: none;
+        }
+        @keyframes cryptoFall {
+            0%   { transform: translateY(-120px); opacity: 0; }
+            10%  { opacity: 0.7; }
+            90%  { opacity: 0.7; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        .header { position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+            background: rgba(13,17,23,0.92); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(48,54,61,0.6); padding: 1rem 2rem; }
+        .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 1500px; margin: 0 auto; }
+        .logo { display: flex; align-items: center; gap: 12px; font-size: 1.5rem; font-weight: 700; color: #f0f6fc; text-decoration: none; }
+        .logo i { color: #7c3aed; text-shadow: 0 0 10px rgba(124,58,237,0.6); }
+
+        .nav-links a { color: #8b949e; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; transition: all 0.3s ease; }
+        .nav-links a:hover { color: #58a6ff; background: rgba(88,166,255,0.15); }
+        .nav-links a.active { color: #58a6ff; background: rgba(88,166,255,0.25); font-weight: 600; }
+
+        .main-container { max-width: 1200px; margin: 6rem auto 3rem; padding: 1.5rem; position: relative; z-index: 10; }
+
+        .hero-title {
+            font-size: clamp(2.2rem, 5vw, 3rem);
+            font-weight: 700;
+            text-align: center;
+            background: linear-gradient(135deg, #f0f6fc 0%, #79c0ff 45%, #7c3aed 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            animation: titleGlow 4s ease-in-out infinite alternate;
+        }
+        @keyframes titleGlow { 0% { filter: drop-shadow(0 0 8px rgba(124,58,237,0.4)); } 100% { filter: drop-shadow(0 0 16px rgba(124,58,237,0.7)); } }
+
+        .hero-subtitle { text-align: center; color: #8b949e; font-size: 1.1rem; margin-bottom: 2rem; }
+
+        .card {
+            background: rgba(33,38,45,0.97);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(48,54,61,0.7);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: all 0.4s ease;
+        }
+        .card:hover { transform: translateY(-6px); border-color: #7c3aed; box-shadow: 0 12px 40px rgba(124,58,237,0.3); }
+
+        .card-header h5 { color: #58a6ff; font-weight: 600; }
+
+        /* High-visibility section titles & helper text */
+        .section-title {
+            color: #f0f6fc !important;
+            font-weight: 600;
+            font-size: 1.35rem;
+            margin: 1.5rem 0 1rem;
+        }
+        .form-text {
+            color: #79c0ff !important;
+            font-size: 0.9rem;
+        }
+
+        .form-label { color: #f0f6fc; font-weight: 500; }
+        .form-control, .form-control:focus {
+            background: rgba(22,27,34,0.95);
+            border: 1px solid rgba(48,54,61,0.7);
+            color: #f0f6fc;
+            border-radius: 8px;
+        }
+        .form-control:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.3); }
+
+        .custom-file-input { display: flex; align-items: center; gap: 0.75rem; }
+        .custom-file-input input[type="file"] { display: none; }
+        .file-display {
+            flex: 1;
+            background: rgba(22,27,34,0.95);
+            border: 1px solid rgba(48,54,61,0.7);
+            color: #f0f6fc;
+            padding: 0.75rem;
+            border-radius: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-display.focused { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.25); }
+
+        .custom-file-input button {
+            background: linear-gradient(135deg, #6e7681 0%, #8b949e 100%);
+            border: none; padding: 0.75rem 1.5rem; border-radius: 8px;
+            color: #f0f6fc; font-weight: 600; transition: all 0.3s ease;
+        }
+        .custom-file-input button:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #9f67ff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(124,58,237,0.4);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #9f67ff 100%);
+            border: none; padding: 1rem; border-radius: 12px;
+            font-weight: 700; font-size: 1.1rem;
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(124,58,237,0.5); }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #58a6ff 0%, #79c0ff 100%);
+            transform: translateY(-2px);
+        }
+
+        .alert-success { background: rgba(46,160,67,0.25); color: #3fb950; border: 1px solid rgba(46,160,67,0.5); }
+        .alert-danger  { background: rgba(248,81,73,0.25); color: #f85149; border: 1px solid rgba(248,81,73,0.5); }
+
+        hr { border-color: rgba(48,54,61,0.7); margin: 2rem 0; }
+
+        .footer { text-align: center; color: #6e7681; padding: 2rem; font-size: 0.9rem; }
+
+        @media (max-width: 768px) {
+            .custom-file-input { flex-direction: column; }
+            .custom-file-input button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="crypto-flow" id="cryptoFlow"></div>
+
+<header class="header" role="banner">
+    <div class="header-content">
+        <a href="/lab3/rc5/encrypt" class="logo" aria-label="RC5 Home">
+            <i class="fas fa-key"></i> <span>RC5-CBC-Pad</span>
+        </a>
+        <nav aria-label="Main navigation">
+            <ul class="nav-links list-unstyled d-flex gap-3 mb-0">
+                <li><a href="/" class="btn-home"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/lab3/rc5/encrypt"><i class="fas fa-lock"></i> Encrypt</a></li>
+                <li><a href="/lab3/rc5/decrypt" class="active"><i class="fas fa-lock-open"></i> Decrypt</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="main-container" role="main">
+    <div class="card" role="region" aria-labelledby="rc5-title">
+        <div class="card-header">
+            <h5 class="mb-0">RC5 File Decryption (CBC with Padding)</h5>
+        </div>
+        <div class="card-body">
+            <h1 class="hero-title" id="rc5-title"><i class="fas fa-file-import"></i> Decrypt File</h1>
+            <p class="hero-subtitle">Використовуйте ту ж саму парольну фразу та параметри RC5, що й для шифрування.</p>
+
+            <div th:if="${error}" class="alert alert-danger alert-dismissible" role="alert">
+                <strong>Error</strong> <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${success}" class="alert alert-success alert-dismissible" role="alert">
+                <strong>Success</strong> <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <form th:action="@{/lab3/rc5/decrypt}" th:object="${request}" method="post" enctype="multipart/form-data" id="rc5Form">
+
+                <div class="mb-3">
+                    <label for="file" class="form-label">Select File to Decrypt (.rc5)</label>
+                    <div class="custom-file-input">
+                        <input type="file" class="form-control" id="file" name="file" required accept=".rc5">
+                        <div class="file-display" id="fileDisplay">No file chosen</div>
+                        <button type="button" onclick="document.getElementById('file').click()">Choose File</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password Phrase</label>
+                    <input type="password" class="form-control" id="password" th:field="*{password}" required placeholder="Must match the encryption password">
+                    <div class="text-danger" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                </div>
+
+                <hr>
+
+                <h5 class="section-title">RC5 Parameters (w/r/b)</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="w" class="form-label">Word Size (w) bits</label>
+                        <input type="number" class="form-control" id="w" th:field="*{w}" value="64" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="r" class="form-label">Rounds (r)</label>
+                        <input type="number" class="form-control" id="r" th:field="*{r}" min="1" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="b" class="form-label">Key Length (b) bytes</label>
+                        <select class="form-control" id="b" th:field="*{b}" required>
+                            <option value="8">8 bytes (64 bit) – MD5 lower half</option>
+                            <option value="16" selected>16 bytes (128 bit) – Full MD5</option>
+                            <option value="32">32 bytes (256 bit) – H(H(P)) || H(P)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h5 class="section-title">Save Options</h5>
+                <div class="mb-3">
+                    <label for="saveName" class="form-label">Output File Name</label>
+                    <input type="text" class="form-control" id="saveName" th:field="*{saveName}" placeholder="[OriginalFileName]">
+                    <div class="form-text">Leave empty → removes .rc5 extension automatically</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Save Location</label>
+                    <input type="file" id="customPath" webkitdirectory directory multiple style="display:none;">
+                    <button type="button" class="btn btn-secondary w-100" onclick="chooseFolder()">Select Folder</button>
+                    <small id="folderPath" class="form-text text-info mt-2"
+                           th:text="${request.saveDirectory} ? 'Selected folder: ' + ${request.saveDirectory} : 'Default: Downloads folder'"></small>
+                    <input type="hidden" id="saveDirectory" th:field="*{saveDirectory}">
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-lock-open"></i> Decrypt File
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+    <p>Built with <i class="fas fa-heart" style="color: #f85149;"></i> by the Research Team</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const symbols = ['Lock','Unlock','Shield','Key','Diamond','Diamond','Club','A','B','C','D','E','F'];
+    function generateCryptoFlow() {
+        const container = document.getElementById('cryptoFlow');
+        for (let i = 0; i < 25; i++) {
+            const el = document.createElement('div');
+            el.className = 'crypto-char';
+            el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+            el.style.left = Math.random() * 100 + '%';
+            el.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            el.style.animationDelay = Math.random() * 5 + 's';
+            container.appendChild(el);
+        }
+    }
+
+    function chooseFolder() {
+        const input = document.getElementById('customPath');
+        input.onchange = e => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                const path = files[0].webkitRelativePath.split('/')[0] || "Selected Folder";
+                document.getElementById('folderPath').innerText = 'Selected folder: ' + path;
+                document.getElementById('saveDirectory').value = path;
+            }
+        };
+        input.click();
+    }
+
+    document.getElementById('file').addEventListener('change', function() {
+        const display = document.getElementById('fileDisplay');
+        if (this.files && this.files[0]) {
+            display.textContent = this.files[0].name;
+            display.classList.add('focused');
+        } else {
+            display.textContent = 'No file chosen';
+            display.classList.remove('focused');
+        }
+    });
+
+    window.addEventListener('DOMContentLoaded', generateCryptoFlow);
+</script>
+</body>
+</html>

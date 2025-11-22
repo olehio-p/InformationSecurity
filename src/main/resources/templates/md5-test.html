@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD5 Hash Function - RFC 1321 Tests</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+            color: #f0f6fc;
+            font-family: 'JetBrains Mono', 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            background-image:
+                    linear-gradient(rgba(139, 148, 158, 0.3) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(139, 148, 158, 0.3) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridMove 30s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(40px, 40px); }
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 30;
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+            padding: 1rem 2rem;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f0f6fc;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: #7c3aed;
+            text-shadow: 0 0 8px rgba(124, 58, 237, 0.6);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links a {
+            color: #8b949e;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+        }
+
+        .nav-links a:hover {
+            color: #58a6ff;
+            background: rgba(88, 166, 255, 0.15);
+        }
+
+        .nav-links a.active {
+            color: #58a6ff;
+            background: rgba(88, 166, 255, 0.2);
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 5rem auto 2rem;
+            padding: 1.5rem;
+            z-index: 10;
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #f0f6fc 0%, #58a6ff 50%, #7c3aed 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+            text-align: center;
+        }
+
+        @keyframes titleGlow {
+            0% { filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.4)); }
+            100% { filter: drop-shadow(0 0 15px rgba(124, 58, 237, 0.6)); }
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            color: #8b949e;
+            margin-bottom: 1.5rem;
+            font-weight: 400;
+            text-align: center;
+        }
+
+        .card {
+            background: rgba(33, 38, 45, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(48, 54, 61, 0.7);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 1rem;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #58a6ff;
+            box-shadow: 0 6px 20px rgba(88, 166, 255, 0.25);
+        }
+
+        .card-header {
+            background: none;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.7);
+            padding: 0.5rem 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-header h5 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+            border: none;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 160, 67, 0.4);
+        }
+
+        .alert {
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .alert-dismissible .btn-close {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 0.8rem;
+        }
+
+        .alert-success {
+            background: rgba(46, 160, 67, 0.2);
+            color: #3fb950;
+            border: 1px solid rgba(46, 160, 67, 0.5);
+        }
+
+        .alert-danger {
+            background: rgba(248, 81, 73, 0.2);
+            color: #f85149;
+            border: 1px solid rgba(248, 81, 73, 0.5);
+        }
+
+        .table {
+            width: 100%;
+            color: #f0f6fc !important;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: rgba(22, 27, 34, 0.9) !important;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table th, .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.7);
+            font-family: 'JetBrains Mono', monospace;
+            color: #f0f6fc !important;
+            background: transparent !important;
+        }
+
+        .table th {
+            background: rgba(13, 17, 23, 0.95) !important;
+            font-weight: 600;
+            color: #f0f6fc !important;
+        }
+
+        .table td code {
+            color: #f0f6fc !important;
+            word-break: break-all;
+            font-size: 0.85rem;
+        }
+
+        .table .text-success {
+            color: #3fb950 !important;
+        }
+
+        .table .text-danger {
+            color: #f85149 !important;
+        }
+
+        .table th:first-child, .table td:first-child {
+            font-size: 0.85rem;
+        }
+
+        .binary-flow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .binary-char {
+            position: absolute;
+            color: rgba(88, 166, 255, 0.15);
+            font-size: 1.2rem;
+            font-weight: 500;
+            animation: binaryFall linear infinite;
+        }
+
+        @keyframes binaryFall {
+            0% {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            color: #6e7681;
+            font-size: 0.9rem;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        .footer a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: #79c0ff;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 0.8rem;
+                align-items: center;
+            }
+
+            .nav-links a {
+                width: 100%;
+                text-align: center;
+                padding: 0.5rem;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            .table th, .table td {
+                padding: 0.5rem;
+                font-size: 0.8rem;
+            }
+
+            .table th:first-child, .table td:first-child {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="binary-flow" id="binaryFlow"></div>
+
+<header class="header" role="banner">
+    <div class="header-content">
+        <a href="/lab2" class="logo" aria-label="MD5 Hash Function Home">
+            <i class="fas fa-lock"></i>
+            <span>MD5 Hash Function</span>
+        </a>
+        <nav aria-label="Main navigation">
+            <ul class="nav-links">
+                <li><a href="/" class="btn-home"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/lab2"><i class="fas fa-home"></i> String Hash</a></li>
+                <li><a href="/lab2/test" class="active"><i class="fas fa-vial"></i> Test</a></li>
+                <li><a href="/lab2/file-hash"><i class="fas fa-file"></i> File Hash</a></li>
+                <li><a href="/lab2/verify"><i class="fas fa-check-circle"></i> Verify</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="main-container" role="main">
+    <div class="card" role="region" aria-labelledby="test-generator-title">
+        <div class="card-header">
+            <h5 class="mb-0">RFC 1321 Test Suite</h5>
+        </div>
+        <div class="card-body">
+            <h1 class="hero-title" id="test-generator-title"><i class="fas fa-vial"></i> MD5 RFC 1321 Tests</h1>
+            <p class="hero-subtitle">Run predefined MD5 test cases from RFC 1321</p>
+
+            <div th:if="${error}" class="alert alert-danger alert-dismissible" role="alert">
+                <strong>✗</strong> <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${success}" class="alert alert-success alert-dismissible" role="alert">
+                <strong>✓</strong> <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <form th:action="@{/lab2/test}" method="post">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-vial"></i> Run RFC 1321 Tests
+                </button>
+            </form>
+
+            <div th:if="${testResults}" class="table-responsive">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Test Case</th>
+                        <th>Input</th>
+                        <th>Expected Hash</th>
+                        <th>Actual Hash</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="result : ${testResults}">
+                        <td th:text="${result.key}"></td>
+                        <td><code th:text="${result.value.input}"></code></td>
+                        <td><code th:text="${result.value.expected}"></code></td>
+                        <td><code th:text="${result.value.actual}"></code></td>
+                        <td>
+                            <span th:class="${result.value.passed} ? 'text-success' : 'text-danger'"
+                                  th:text="${result.value.passed} ? 'Passed' : 'Failed'"></span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+    <p>Built with <i class="fas fa-heart" style="color: #f85149;"></i> by the Research Team •
+        <a href="#">View Source</a> • <a href="#">Report Issues</a></p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function generateBinaryFlow() {
+        const container = document.getElementById('binaryFlow');
+        const numberOfChars = 30;
+        const binaryChars = '01'.split('');
+
+        for (let i = 0; i < numberOfChars; i++) {
+            const charElem = document.createElement('div');
+            charElem.className = 'binary-char';
+            charElem.textContent = binaryChars[Math.floor(Math.random() * binaryChars.length)];
+            charElem.style.left = Math.random() * 100 + '%';
+            charElem.style.animationDuration = (Math.random() * 8 + 6) + 's';
+            charElem.style.animationDelay = Math.random() * 3 + 's';
+            charElem.style.fontSize = (Math.random() * 0.5 + 1) + 'rem';
+            container.appendChild(charElem);
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        generateBinaryFlow();
+    });
+</script>
+</body>
+</html>
